@@ -1,0 +1,51 @@
+# Script: procesar_numeros.R
+
+# Función para leer el archivo y devolver un vector de números enteros
+leer_numeros <- function(archivo) {
+  if (!file.exists(archivo)) {
+    stop("El archivo no existe. Por favor, verifica el nombre y la ubicación del archivo.")
+  }
+  numeros <- as.integer(readLines(archivo))
+  return(numeros)
+}
+
+# Función principal para procesar los números
+procesar_numeros <- function() {
+  archivo_entrada <- "numeros.txt"
+  archivo_salida <- "resultados.txt"
+
+  # Leer los números desde el archivo
+  numeros <- leer_numeros(archivo_entrada)
+
+  # Calcular estadísticas
+  media <- mean(numeros)
+  mediana <- median(numeros)
+  desviacion <- sd(numeros)
+
+  # Verificar alta variabilidad
+  if (desviacion > 10) {
+    cat("Alta variabilidad detectada en los datos.\n")
+  }
+
+  # Calcular el cuadrado de cada número usando sapply
+  cuadrados <- sapply(numeros, function(x) x^2)
+
+  # Escribir resultados en el archivo de salida
+  cat("Escribiendo resultados en el archivo de salida...\n")
+  fileConn <- file(archivo_salida)
+  writeLines(c(
+    "Resultados del análisis:",
+    paste("Media:", media),
+    paste("Mediana:", mediana),
+    paste("Desviación estándar:", desviacion),
+    "", # Línea vacía
+    "Cuadrados de los números:",
+    paste(numeros, "->", cuadrados, collapse = "\n")
+  ), fileConn)
+  close(fileConn)
+
+  cat("Análisis completado. Los resultados se han guardado en resultados.txt\n")
+}
+
+# Ejecutar el programa principal
+procesar_numeros()
