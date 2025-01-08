@@ -1,0 +1,67 @@
+# Instalar y cargar las librerías necesarias
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+if (!require("tidyr")) install.packages("tidyr")
+library(tidyr)
+
+# Cargar el dataset mtcars y convertirlo en un dataframe
+data(mtcars)
+df <- as.data.frame(mtcars)
+
+# Selección y filtrado
+selected_df <- df %>%
+  select(mpg, cyl, hp, gear) %>%
+  filter(cyl > 4)
+cat("\nDataframe tras seleccionar y filtrar:\n")
+print(selected_df)
+
+# Ordenación y renombrado
+renamed_df <- selected_df %>%
+  arrange(desc(hp)) %>%
+  rename(consumo = mpg, potencia = hp)
+cat("\nDataframe tras ordenar y renombrar:\n")
+print(renamed_df)
+
+# Creación de nuevas columnas y agregación
+grouped_df <- renamed_df %>%
+  mutate(eficiencia = consumo / potencia) %>%
+  group_by(cyl) %>%
+  summarise(
+    consumo_medio = mean(consumo, na.rm = TRUE),
+    potencia_maxima = max(potencia, na.rm = TRUE)
+  )
+cat("\nDataframe tras agregar eficiencia y agrupar por cilindros:\n")
+print(grouped_df)
+
+# Creación del segundo dataframe y unión
+tipo_transmision <- data.frame(
+  gear = c(3, 4, 5),
+  tipo_transmision = c("Manual", "Automática", "Semiautomática")
+)
+
+joined_df <- renamed_df %>%
+  left_join(tipo_transmision, by = "gear")
+cat("\nDataframe tras la unión con tipo_transmision:\n")
+print(joined_df)
+
+# Transformación de formatos a formato largo
+long_df <- joined_df %>%
+  pivot_longer(
+    cols = c(consumo, potencia, eficiencia),
+    names_to = "medida",
+    values_to = "valor"
+  )
+cat("\nDataframe en formato largo:\n")
+print(long_df)
+
+# Manejo de duplicados y transformación a formato ancho
+wide_df <- long_df %>%
+  group_by(cyl, gear, tipo_transmision, medida) %>%
+  summarise(valor = mean(valor, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(
+    names_from = medida,
+    values_from = valor
+  )
+cat("\nDataframe en formato ancho tras manejo de duplicados:\n")
+print(wide_df)
