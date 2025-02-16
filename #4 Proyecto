@@ -1,0 +1,66 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+
+# Cargar los datos
+ventas_df = pd.read_csv('/workspace/ventas_peliculas.csv')
+promocion_df = pd.read_csv('/workspace/promocion_peliculas.csv')
+
+# Convertir la columna de fecha a datetime
+ventas_df['fecha'] = pd.to_datetime(ventas_df['fecha'])
+promocion_df['fecha'] = pd.to_datetime(promocion_df['fecha'])
+
+# Unir los DataFrames
+merged_df = ventas_df.merge(promocion_df, on=['fecha', 'titulo'], how='left', validate='1:m')
+
+# Rellenar valores nulos con 0
+merged_df.fillna(0, inplace=True)
+
+# Detección de valores nulos
+print("Valores nulos por columna:")
+print(merged_df.isna().sum())
+
+# Visualización de ventas semanales
+ts_ventas = merged_df.groupby('fecha')['ventas_boletos'].sum()
+ts_ventas.plot(kind='line', title='Ventas Semanales de Boletos', ylabel='Ventas de boletos', xlabel='Fecha')
+plt.show()
+
+# Comparación de semanas con y sin promoción
+sns.barplot(x=merged_df['eventos_promocionales'] > 0, y=merged_df['ventas_boletos'])
+plt.title('Ventas promedio con y sin promoción')
+plt.xlabel('Evento Promocional')
+plt.ylabel('Ventas Promedio')
+plt.show()
+
+# Detección de outliers con Boxplot
+plt.figure(figsize=(8, 6))
+sns.boxplot(x=merged_df['ventas_boletos'])
+plt.title('Distribución de Ventas de Boletos')
+plt.show()
+
+# Cálculo de correlación
+correlation_matrix = merged_df[['ventas_boletos', 'calificacion', 'eventos_promocionales', 'participacion_promocion']].corr()
+print("Matriz de Correlación:")
+print(correlation_matrix)
+
+# Modelo de Regresión Lineal
+X = merged_df[['calificacion', 'eventos_promocionales', 'participacion_promocion']]
+X = sm.add_constant(X)  # Agregar intercepto
+Y = merged_df['ventas_boletos']
+modelo = sm.OLS(Y, X).fit()
+
+# Resumen del modelo
+print(modelo.summary())
+
+# Predicción y comparación gráfica
+merged_df['prediccion'] = modelo.predict(X)
+plt.figure(figsize=(10, 6))
+plt.plot(merged_df['fecha'], merged_df['ventas_boletos'], label='Ventas Reales')
+plt.plot(merged_df['fecha'], merged_df['prediccion'], label='Ventas Predichas', linestyle='dashed')
+plt.legend()
+plt.title('Comparación entre Ventas Reales y Predichas')
+plt.xlabel('Fecha')
+plt.ylabel('Ventas de Boletos')
+plt.show()
