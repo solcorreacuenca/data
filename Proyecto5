@@ -1,0 +1,115 @@
+---
+title: "Segmentación de Clientes - Mall Customers Dataset"
+author: "Tu Nombre"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Carga del dataset
+
+```{r}
+# Librerías necesarias
+library(tidyverse)
+library(cluster)
+library(factoextra)
+library(dplyr)
+
+# Cargar dataset
+data <- read.csv("Mall_Customers.csv")
+head(data)
+```
+
+## 2. Exploración y limpieza de datos
+
+```{r}
+# Estructura del dataset
+dim(data)
+str(data)
+summary(data)
+
+# Renombrar columnas
+colnames(data) <- c("ID", "Genre", "Age", "AnnualIncome", "SpendingScore")
+
+# Codificar género (1 = Male, 0 = Female)
+data$Genre <- ifelse(data$Genre == "Male", 1, 0)
+
+# Normalizar ingresos y puntuación de gasto
+data_scaled <- data %>%
+  select(AnnualIncome, SpendingScore) %>%
+  scale()
+```
+
+## 3. Exploración de variables
+
+```{r}
+# Histogramas
+ggplot(data, aes(x = Age)) + geom_histogram(bins = 20, fill = "skyblue", color = "black")
+ggplot(data, aes(x = AnnualIncome)) + geom_histogram(bins = 20, fill = "orange", color = "black")
+ggplot(data, aes(x = SpendingScore)) + geom_histogram(bins = 20, fill = "green", color = "black")
+```
+
+## 4. Entrenamiento de modelos de clustering
+
+### K-Means
+
+```{r}
+# Método del codo
+fviz_nbclust(data_scaled, kmeans, method = "wss")
+
+# Entrenar KMeans con k = 5 (por ejemplo)
+kmeans_model <- kmeans(data_scaled, centers = 5, nstart = 25)
+data$Cluster_KMeans <- kmeans_model$cluster
+```
+
+### Clustering Jerárquico
+
+```{r}
+dist_matrix <- dist(data_scaled)
+hc <- hclust(dist_matrix, method = "ward.D")
+plot(hc, labels = FALSE)
+data$Cluster_HC <- cutree(hc, k = 5)
+```
+
+## 5. Evaluación de modelos
+
+```{r}
+# Silhouette KMeans
+sil_k <- silhouette(kmeans_model$cluster, dist_matrix)
+mean(sil_k[, 3])
+
+# Silhouette Jerárquico
+sil_h <- silhouette(data$Cluster_HC, dist_matrix)
+mean(sil_h[, 3])
+```
+
+## 6. Análisis descriptivo de segmentos
+
+```{r}
+# Promedios por cluster (KMeans)
+aggregate(cbind(Age, AnnualIncome, SpendingScore) ~ Cluster_KMeans, data = data, mean)
+
+# Promedios por cluster (Jerárquico)
+aggregate(cbind(Age, AnnualIncome, SpendingScore) ~ Cluster_HC, data = data, mean)
+```
+
+## 7. Visualización de clusters
+
+```{r}
+# Visualización KMeans
+fviz_cluster(kmeans_model, data = data_scaled, geom = "point")
+
+# Visualización Jerárquico
+fviz_cluster(list(data = data_scaled, cluster = data$Cluster_HC))
+```
+
+## 8. Conclusiones
+
+- Se probaron dos modelos de segmentación: K-Means y clustering jerárquico.
+- Ambos modelos permiten distinguir perfiles de clientes con diferentes niveles de ingreso y gasto.
+- La métrica de silueta fue utilizada para comparar la calidad de los clusters.
+- La visualización ayuda a interpretar claramente los segmentos generados.
+
+**Este archivo puede ser subido directamente a un repositorio de GitHub.**
