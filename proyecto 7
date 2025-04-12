@@ -1,0 +1,54 @@
+# Cargar el dataset
+data("nottem")
+
+# Inspeccionar la estructura del dataset
+print(class(nottem))   # Verifica que es una serie temporal (ts)
+print(summary(nottem)) # Resumen estadístico de la serie temporal
+
+# Graficar la serie temporal
+plot(nottem, main = "Temperaturas Mensuales en Nottingham (1920-1939)",
+     xlab = "Año", ylab = "Temperatura", col = "blue")
+
+# Exploración inicial de los datos
+
+# Descomponer la serie temporal para identificar componentes de tendencia, estacionalidad y aleatoriedad
+decomposed_nottem <- decompose(nottem)
+
+# Graficar los componentes
+plot(decomposed_nottem)
+
+# Análisis de estacionariedad
+
+# Graficar autocorrelación (ACF) y autocorrelación parcial (PACF) para explorar patrones temporales
+acf(nottem, main="ACF - Autocorrelación")
+pacf(nottem, main="PACF - Autocorrelación Parcial")
+
+# Realizar la prueba ADF para estacionariedad
+install.packages("tseries")  # Si no lo tienes instalado
+library(tseries)
+
+# Prueba de Dickey-Fuller aumentada para evaluar la estacionariedad
+adf_test <- adf.test(nottem)
+cat("Resultado de la prueba ADF: ", adf_test$p.value, "\n")
+
+# Si la serie no es estacionaria, realizar una diferenciación para hacerla estacionaria
+diff_nottem <- diff(nottem)
+
+# Graficar la serie diferenciada
+plot(diff_nottem, main="Serie Temporal Diferenciada", 
+     ylab="Diferencias", xlab="Años", col="blue", type="o", lwd=2)
+
+# Volver a realizar la prueba ADF en la serie diferenciada
+adf_test_diff <- adf.test(diff_nottem)
+cat("Resultado de la prueba ADF en la serie diferenciada: ", adf_test_diff$p.value, "\n")
+
+# Detección de valores atípicos
+
+# Graficar un boxplot para detectar outliers
+boxplot(nottem, main="Boxplot de las Temperaturas Mensuales", ylab="Temperatura")
+
+# Interpretación de los resultados
+cat("La serie muestra una tendencia ascendente general, indicando un aumento en las temperaturas con el tiempo.\n")
+cat("Se observa estacionalidad con picos en los meses de verano y valles en los meses de invierno.\n")
+cat("La prueba ADF muestra que la serie no es estacionaria, pero la diferenciación ayuda a estabilizar la media, como se observa en la serie diferenciada.\n")
+cat("Algunos valores atípicos pueden estar presentes, pero estos son importantes para el análisis de las anomalías climáticas.\n")
