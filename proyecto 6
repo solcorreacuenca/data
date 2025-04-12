@@ -1,0 +1,61 @@
+# Cargar el dataset
+data("AirPassengers")
+
+# Verificar la estructura del dataset
+print(class(AirPassengers))   # Verifica que es una serie temporal (ts)
+print(summary(AirPassengers)) # Resumen estadístico
+print(start(AirPassengers))   # Inicio de la serie
+print(end(AirPassengers))     # Fin de la serie
+print(frequency(AirPassengers)) # Frecuencia: 12 (mensual)
+
+# Exploración inicial
+
+# Graficar la serie temporal
+plot(AirPassengers, main="Número de Pasajeros Internacionales (1949-1960)", 
+     ylab="Número de Pasajeros", xlab="Años", col="blue", type="o", lwd=2)
+
+# Estadísticas descriptivas básicas
+mean_value <- mean(AirPassengers)
+sd_value <- sd(AirPassengers)
+cat("Media de la serie: ", mean_value, "\n")
+cat("Desviación estándar de la serie: ", sd_value, "\n")
+
+# Análisis de tendencia y estacionalidad
+
+# Descomponer la serie temporal
+decomposed_series <- decompose(AirPassengers)
+
+# Graficar los componentes
+plot(decomposed_series)
+
+# Análisis de estacionariedad
+
+# Graficar autocorrelación (ACF) y autocorrelación parcial (PACF)
+acf(AirPassengers, main="ACF - Autocorrelación")
+pacf(AirPassengers, main="PACF - Autocorrelación Parcial")
+
+# Realizar la prueba ADF para estacionariedad
+install.packages("tseries")  # Si no lo tienes instalado
+library(tseries)
+
+adf_test <- adf.test(AirPassengers)
+cat("Resultado de la prueba ADF: ", adf_test$p.value, "\n")
+
+# Si la serie no es estacionaria, realizamos la diferenciación
+diff_AirPassengers <- diff(AirPassengers)
+
+# Graficar la serie diferenciada
+plot(diff_AirPassengers, main="Serie Temporal Diferenciada", 
+     ylab="Diferencias", xlab="Años", col="blue", type="o", lwd=2)
+
+# Detección de valores atípicos
+
+# Graficar un boxplot para detectar outliers
+boxplot(AirPassengers, main="Boxplot de los Pasajeros Internacionales", ylab="Número de Pasajeros")
+
+# Interpretación de resultados
+
+# Resumen de la tendencia, estacionalidad, y ciclos
+cat("La serie muestra una tendencia ascendente a lo largo de los años, lo que indica un crecimiento en el número de pasajeros internacionales.\n")
+cat("También se observan patrones estacionales con picos en los meses de verano y valles en invierno.\n")
+cat("Se identificaron algunos valores atípicos, que podrían ser eventos excepcionales en el sector de la aviación.\n")
