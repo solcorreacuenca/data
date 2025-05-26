@@ -1,0 +1,136 @@
+# Importar librerías necesarias
+import pandas as pd
+import folium
+from folium.plugins import HeatMap, MarkerCluster
+from IPython.display import display
+
+# Cargar dataset
+df = pd.read_csv('/mnt/data/fires_map.csv')
+
+# Visualizar primeras filas para entender datos
+display(df.head())
+
+# Datos principales asumidos:
+# 'latitude', 'longitude', 'brightness', 'satellite'
+
+# Crear un mapa base centrado en la media de lat y lon
+map_center = [df['latitude'].mean(), df['longitude'].mean()]
+base_map = folium.Map(location=map_center, zoom_start=6)
+
+# -----------------------------------------
+# Mapa 1: HeatMap - zonas con más incendios
+# -----------------------------------------
+heat_data = df[['latitude', 'longitude']].values.tolist()
+
+heatmap_map = folium.Map(location=map_center, zoom_start=6)
+HeatMap(heat_data).add_to(heatmap_map)
+
+# -----------------------------------------
+# Mapa 2: Marcadores con iconos fire y colores según brightness
+# -----------------------------------------
+def brightness_color(brightness):
+    if brightness < 330:
+        return 'yellow'
+    elif brightness < 350:
+        return 'orange'
+    else:
+        return 'red'
+
+markers_map = folium.Map(location=map_center, zoom_start=6)
+for _, row in df.iterrows():
+    color = brightness_color(row['brightness'])
+    folium.Marker(
+        location=[row['latitude'], row['longitude']],
+        popup=f"Brightness: {row['brightness']}",
+        icon=folium.Icon(icon='fire', prefix='fa', color=color)
+    ).add_to(markers_map)
+
+# -----------------------------------------
+# Mapa 3: Agrupación de incendios con MarkerCluster
+# -----------------------------------------
+cluster_map = folium.Map(location=map_center, zoom_start=6)
+marker_cluster = MarkerCluster().add_to(cluster_map)
+
+for _, row in df.iterrows():
+    color = brightness_color(row['brightness'])
+    folium.Marker(
+        location=[row['latitude'], row['longitude']],
+        popup=f"Brightness: {row['brightness']}",
+        icon=folium.Icon(icon='fire', prefix='fa', color=color)
+    ).add_to(marker_cluster)
+
+# -----------------------------------------
+# Mapa 4: Control de capas - incendios por satélite (Aqua vs Terra)
+# -----------------------------------------
+satellite_map = folium.Map(location=map_center, zoom_start=6)
+
+fg_aqua = folium.FeatureGroup(name='Aqua')
+fg_terra = folium.FeatureGroup(name='Terra')
+
+for _, row in df.iterrows():
+    color = brightness_color(row['brightness'])
+    marker = folium.CircleMarker(
+        location=[row['latitude'], row['longitude']],
+        radius=5,
+        popup=f"Satellite: {row['satellite']}<br>Brightness: {row['brightness']}",
+        color=color,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.7
+    )
+    if row['satellite'] == 'Aqua':
+        fg_aqua.add_child(marker)
+    else:
+        fg_terra.add_child(marker)
+
+satellite_map.add_child(fg_aqua)
+satellite_map.add_child(fg_terra)
+folium.LayerControl().add_to(satellite_map)
+
+# -----------------------------------------
+# Mapa 5: Control de capas - capas por color de incendio
+# -----------------------------------------
+color_map = folium.Map(location=map_center, zoom_start=6)
+
+fg_yellow = folium.FeatureGroup(name='Yellow Brightness')
+fg_orange = folium.FeatureGroup(name='Orange Brightness')
+fg_red = folium.FeatureGroup(name='Red Brightness')
+
+for _, row in df.iterrows():
+    color = brightness_color(row['brightness'])
+    marker = folium.CircleMarker(
+        location=[row['latitude'], row['longitude']],
+        radius=5,
+        popup=f"Brightness: {row['brightness']}, Satellite: {row['satellite']}",
+        color=color,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.7
+    )
+    if color == 'yellow':
+        fg_yellow.add_child(marker)
+    elif color == 'orange':
+        fg_orange.add_child(marker)
+    else:
+        fg_red.add_child(marker)
+
+color_map.add_child(fg_yellow)
+color_map.add_child(fg_orange)
+color_map.add_child(fg_red)
+folium.LayerControl().add_to(color_map)
+
+# Mostrar mapas (en Jupyter Notebook se pueden mostrar uno a uno)
+print("Mapa 1: HeatMap")
+display(heatmap_map)
+
+print("Mapa 2: Marcadores por brillo")
+display(markers_map)
+
+print("Mapa 3: MarkerCluster")
+display(cluster_map)
+
+print("Mapa 4: Incendios por satélite con control de capas")
+display(satellite_map)
+
+print("Mapa 5: Incendios por color con control de capas")
+display(color_map)
